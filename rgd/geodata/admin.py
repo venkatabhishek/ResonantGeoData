@@ -1,5 +1,9 @@
-from django.contrib import admin
+from django import forms
+from django.contrib import admin, messages
 from django.contrib.gis.admin import OSMGeoAdmin
+from django.http import HttpResponseRedirect
+from django.shortcuts import render
+from django.urls import path
 
 from . import actions
 from .models.collection import Collection, CollectionMembership
@@ -44,6 +48,18 @@ class _FileGetNameMixin:
     get_name.admin_order_field = 'file__name'
 
 
+class BulkUploadChecksumFileForm(forms.Form):
+    collection = forms.ModelChoiceField(queryset=Collection.objects.all())
+    files = ChecksumFile.file.field.formfield()
+    files.widget.attrs.update(
+        {
+            'directory': True,
+            'mozdirectory': True,
+            'webkitdirectory': True,
+        }
+    )
+
+
 @admin.register(ChecksumFile)
 class ChecksumFileAdmin(OSMGeoAdmin):
     list_display = (
@@ -61,6 +77,33 @@ class ChecksumFileAdmin(OSMGeoAdmin):
         'last_validation',
     ) + TASK_EVENT_READONLY
     actions = (actions.reprocess,)
+    change_list_template = 'admin/geodata/checksumfile/change_list.html'
+
+    def get_urls(self):
+        return [
+            path(
+                'bulk_upload/',
+                self.admin_site.admin_view(self.bulk_upload_view),
+            )
+        ] + super().get_urls()
+
+    def bulk_upload_view(self, request):
+        if request.method == 'POST':
+            form = BulkUploadChecksumFileForm(request.POST)
+            if form.is_valid():
+                self.message_user(request, 'Succesfully uploaded.', messages.SUCCESS)
+                return HttpResponseRedirect('admin:%s_%s_changelist')
+        else:
+            form = BulkUploadChecksumFileForm()
+        return render(
+            request,
+            'admin/geodata/checksumfile/bulk_upload.html',
+            dict(
+                self.admin_site.each_context(request),
+                title='Bulk upload checksum files',
+                form=form,
+            ),
+        )
 
 
 @admin.register(KWCOCOArchive)
