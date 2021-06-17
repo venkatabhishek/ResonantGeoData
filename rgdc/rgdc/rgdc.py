@@ -240,6 +240,13 @@ class Rgdc:
         )
         return list(limit_offset_pager(self.session, 'geosearch', params=params))
 
+    def create_raster_stac(self, raster: Dict) -> bool:
+        """Create a raster entry using STAC format."""
+        r = self.session.post('geodata/imagery/raster/stac', data=raster)
+        r.raise_for_status()
+
+        return True
+
     def search_raster_stac(
         self,
         query: Optional[Union[Dict, str]] = None,
