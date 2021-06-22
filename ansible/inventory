@@ -1,0 +1,6 @@
+[aws]
+18.117.122.187
+
+[aws:vars]
+ansible_user=ubuntu
+ansible_python_interpreter=/usr/bin/python3

@@ -37,6 +37,8 @@ class GeoDjangoMixin(ConfigMixin):
         except Exception:
             # TODO: Log that we aren't using the expected GDAL wheel?
             pass
+    
+        configuration.ALLOWED_HOSTS = ['18.117.122.187']
 
 
 class SwaggerMixin(ConfigMixin):
