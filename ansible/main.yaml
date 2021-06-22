@@ -6,8 +6,9 @@
   tasks:
   - name: checkout code
     git:
-      repo: "https://github.com/ResonantGeoData/ResonantGeoData.git"
+      repo: "https://github.com/venkatabhishek/ResonantGeoData.git"
       dest: "{{ app_path }}"
+      version: production
       force: yes
 
   - name: install pip
@@ -87,6 +88,20 @@
         - docker-compose.yml
     register: output
     become: yes
+  
+  - name: run migrations
+    django_manage:
+      command: migrate
+      app_path: "{{ app_path }}"
+      virtualenv: "{{ venv }}"
+    environment:
+      DJANGO_CONFIGURATION: DevelopmentConfiguration
+      DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+      DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
+      DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+      DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+      DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+      DJANGO_STORAGE_BUCKET_NAME: django-storage
 
   - name: create conf.d directory
     file:
@@ -160,3 +175,6 @@
     
   - ansible.builtin.debug:
       var: output
+
+  - name: map port 8000 to socket
+    shell: socat -d -d TCP4-LISTEN:8000,fork UNIX-CONNECT:/run/gunicorn.sock

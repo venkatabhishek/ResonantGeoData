@@ -1,5 +1,5 @@
 [aws]
-18.117.122.187
+18.217.111.240
 
 [aws:vars]
 ansible_user=ubuntu
