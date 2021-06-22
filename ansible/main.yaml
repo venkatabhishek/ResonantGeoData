@@ -17,6 +17,7 @@
         - python3-dev
         - python3-pip
         - libpq-dev
+        - socat
       update_cache: yes
       state: present
     become: yes
@@ -27,10 +28,11 @@
         - docker
         - docker-compose
         - virtualenv
+    become: yes
 
   - name: create virtualenv
     shell:
-      cmd: virtualenv {{ app_path }}/venv -p python3.8 
+      cmd: /usr/local/bin/virtualenv {{ app_path }}/venv -p python3.8 
 
       
   - name: pip requirements
@@ -176,5 +178,20 @@
   - ansible.builtin.debug:
       var: output
 
-  - name: map port 8000 to socket
-    shell: socat -d -d TCP4-LISTEN:8000,fork UNIX-CONNECT:/run/gunicorn.sock
+  - name: create socat service
+    template:
+      src: ./socat/socat.service.j2
+      dest: /etc/systemd/system/socat.service
+    become: yes
+
+  - name: start socat service
+    systemd:
+      name: socat.service
+      enabled: yes
+      state: started
+      daemon_reload: yes
+    register: output
+    become: yes
+
+  - ansible.builtin.debug:
+      var: output
